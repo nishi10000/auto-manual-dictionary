@@ -27,9 +27,15 @@ def test_cli_match_blocks_and_pages_persist_candidates(tmp_path, capsys):
     assert "concepts_seen=" in concept_output
     assert "evidence_created=" in concept_output
 
+    assert main(["update-confidence", "--db", str(db_path)]) == 0
+    confidence_output = capsys.readouterr().out
+    assert "concepts_updated=" in confidence_output
+    assert "review_ready=" in confidence_output
+
     with sqlite3.connect(db_path) as conn:
         assert conn.execute("SELECT COUNT(*) FROM block_match_candidates").fetchone()[0] > 0
         assert conn.execute("SELECT COUNT(*) FROM page_match_candidates").fetchone()[0] > 0
         assert conn.execute("SELECT COUNT(*) FROM concepts").fetchone()[0] > 0
         assert conn.execute("SELECT COUNT(*) FROM concept_terms").fetchone()[0] > 0
         assert conn.execute("SELECT COUNT(*) FROM evidence").fetchone()[0] > 0
+        assert conn.execute("SELECT COUNT(*) FROM concepts WHERE confidence_version = 'confidence_mvp_0.1'").fetchone()[0] > 0

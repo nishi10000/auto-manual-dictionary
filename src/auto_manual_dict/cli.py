@@ -5,6 +5,7 @@ from pathlib import Path
 
 from .block_matcher import match_blocks
 from .concepts import build_concepts
+from .confidence import update_confidence
 from .ingest import ingest_directory
 from .page_matcher import match_pages
 from .term_extract import extract_terms_to_db
@@ -136,6 +137,18 @@ def main(argv: list[str] | None = None) -> int:
                     f"concepts_created={result.concepts_created}",
                     f"concept_terms_created={result.concept_terms_created}",
                     f"evidence_created={result.evidence_created}",
+                ]
+            )
+        )
+        return 0
+    if args.command == "update-confidence":
+        result = update_confidence(db_path=args.db)
+        print(
+            " ".join(
+                [
+                    f"concepts_seen={result.concepts_seen}",
+                    f"concepts_updated={result.concepts_updated}",
+                    f"review_ready={result.review_ready}",
                 ]
             )
         )

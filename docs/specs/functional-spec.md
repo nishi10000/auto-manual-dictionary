@@ -97,6 +97,22 @@ MVP挙動:
 
 用語候補、ページ候補、断片候補、既存辞書をもとに概念候補の確信度を更新する。
 
+MVPでは `confidence_json` に説明可能な内訳を保存する。
+
+- `anchor_score`
+- `section_score`
+- `lexical_score`
+- `frequency_score`
+- `diversity_score`
+- `heading_score`
+- `table_alignment_score`
+- `negative_evidence_penalty`
+- `safety_penalty`
+- `final_score`
+
+`confidence_version` は `confidence_mvp_0.1`。
+`confidence >= 0.85` の候補は `review_ready` にする。ただし `confirmed` はスコアだけでは絶対に設定しない。
+
 スコアを上げる要素:
 
 - 異なるページ/章からの複数証拠
