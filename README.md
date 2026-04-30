@@ -18,6 +18,7 @@
 - `docs/specs/requirements.md` — 要件定義
 - `docs/specs/functional-spec.md` — 機能仕様
 - `docs/specs/operations-workflow.md` — 実運用手順と人間レビュー対象
+- `docs/specs/quantitative-goals.md` — 実装前に決める定量ゴール
 - `docs/architecture/architecture.md` — Pythonアーキテクチャ
 - `docs/architecture/data-model.md` — SQLite/JSONデータモデル
 - `docs/testing/test-strategy.md` — テスト設計

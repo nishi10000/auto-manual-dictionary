@@ -92,10 +92,15 @@
 
 ## 合格ライン PoC
 
+詳細な段階別ゴールは `docs/specs/quantitative-goals.md` を正とする。最低ラインは以下。
+
 - review_ready候補の承認率: 70%以上
-- high confidenceページ候補の正解率: 80%以上
-- confirmed辞書展開でTop5正解率がベースラインより改善
-- blocked候補が検索展開に混ざらない
+- high confidence候補、例: 0.85以上、の承認率: 80%以上
+- block/section対応候補 Precision@5: 85%以上
+- confirmed辞書展開でTop5正解率がBM25のみより +10ポイント以上改善
+- Top1正解率はBM25のみより悪化しない、許容悪化は -2ポイント以内
+- blocked/candidate/review_ready候補が検索展開に混ざらない
+- safety/warning系で誤ったanswer-generation safeを0件にする
 
 ## 重要な失敗パターン
 
