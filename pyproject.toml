@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "auto-manual-dictionary"
+version = "0.1.0"
+description = "Python-only local-first terminology dictionary builder for asymmetric Japanese/English automotive manual HTML."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "yu nishihara"}]
+dependencies = [
+  "beautifulsoup4>=4.12",
+  "lxml>=5.0",
+  "pandas>=2.0",
+  "rapidfuzz>=3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+]
+ja = [
+  "sudachipy>=0.6.8",
+  "sudachidict-core>=20241021",
+]
+ml = [
+  "scikit-learn>=1.4",
+]
+
+[project.scripts]
+auto-manual-dict = "auto_manual_dict.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

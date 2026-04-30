@@ -1,0 +1,42 @@
+{
+  "concept_id": "SYMPTOM_ENGINE_NO_START",
+  "category": "symptom",
+  "status": "review_ready",
+  "confidence": 0.86,
+  "ja_terms": [
+    {
+      "term": "始動不良",
+      "status": "candidate",
+      "evidence_count": 8
+    },
+    {
+      "term": "エンジンがかからない",
+      "status": "candidate",
+      "evidence_count": 4
+    }
+  ],
+  "en_terms": [
+    {
+      "term": "engine does not start",
+      "status": "candidate",
+      "evidence_count": 10
+    },
+    {
+      "term": "no start",
+      "status": "candidate",
+      "evidence_count": 3
+    }
+  ],
+  "contexts": ["engine", "fuel_pressure", "starter"],
+  "evidence": [
+    {
+      "evidence_type": "paragraph_alignment",
+      "score": 0.91,
+      "ja_file": "ja/sample.html",
+      "en_file": "en/sample.html",
+      "ja_context": "エンジン始動不良時は燃圧を点検する。",
+      "en_context": "When the engine does not start, inspect the fuel pressure.",
+      "anchors": ["fuel pressure"]
+    }
+  ]
+}
