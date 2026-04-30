@@ -9,8 +9,10 @@
 ```bash
 python -m auto_manual_dict ingest --lang ja --input ./manuals/ja --db ./work/dict.sqlite3
 python -m auto_manual_dict ingest --lang en --input ./manuals/en --db ./work/dict.sqlite3
+python -m auto_manual_dict match-blocks --db ./work/dict.sqlite3
 python -m auto_manual_dict match-pages --db ./work/dict.sqlite3
 python -m auto_manual_dict extract-terms --db ./work/dict.sqlite3
+python -m auto_manual_dict build-concepts --db ./work/dict.sqlite3
 python -m auto_manual_dict update-confidence --db ./work/dict.sqlite3
 python -m auto_manual_dict export-review --db ./work/dict.sqlite3 --out ./review/review_ready.csv
 python -m auto_manual_dict approve --db ./work/dict.sqlite3 --concept-id SYMPTOM_ENGINE_NO_START
@@ -79,7 +81,19 @@ python -m auto_manual_dict export-dictionary --db ./work/dict.sqlite3 --format j
 
 初期は標準ライブラリ正規表現で始める。必要に応じて SudachiPy / spaCy は optional extras とする。
 
-## 機能4: update-confidence
+## 機能4: build-concepts
+
+高スコアの `block_match_candidates` 上に出現した日本語/英語の `term_occurrences` を組み合わせ、`concepts` / `concept_terms` / `evidence` に候補として保存する。
+
+MVP挙動:
+
+- 既定では `score >= 0.25` の matched block を使う
+- `concept_id` は category と正規化済み日英用語から安定生成する
+- `status` は `candidate` のまま。自動で `confirmed` にはしない
+- `safe_for_query_expansion` / `safe_for_answer_generation` は人間レビュー前なので 0 のまま
+- 再実行しても concept / concept_terms / evidence を重複作成しない
+
+## 機能5: update-confidence
 
 用語候補、ページ候補、断片候補、既存辞書をもとに概念候補の確信度を更新する。
 
@@ -97,7 +111,7 @@ python -m auto_manual_dict export-dictionary --db ./work/dict.sqlite3 --format j
 - LLM推定のみ
 - 同一抽出方法からの重複証拠だけ
 
-## 機能5: export-review
+## 機能6: export-review
 
 `review_ready` 候補をCSV/JSONLで出す。
 
@@ -113,7 +127,7 @@ python -m auto_manual_dict export-dictionary --db ./work/dict.sqlite3 --format j
 - sample_en_context
 - recommended_action
 
-## 機能6: approve/block
+## 機能7: approve/block
 
 人間レビュー結果を反映する。
 

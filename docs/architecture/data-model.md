@@ -190,7 +190,7 @@ CREATE TABLE concept_terms (
 
 ## evidence
 
-候補の根拠。もっとも重要。
+候補の根拠。もっとも重要。`matched_block_terms` は `(concept_id, ja_term_id, en_term_id, ja_block_id, en_block_id, evidence_type)` で一意にし、再実行で重複証拠を作らない。
 
 ```sql
 CREATE TABLE evidence (

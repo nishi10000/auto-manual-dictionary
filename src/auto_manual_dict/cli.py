@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 
 from .block_matcher import match_blocks
+from .concepts import build_concepts
 from .ingest import ingest_directory
 from .page_matcher import match_pages
 from .term_extract import extract_terms_to_db
@@ -41,8 +42,9 @@ def build_parser() -> argparse.ArgumentParser:
     for name in ["match-blocks", "match-pages", "extract-terms", "build-concepts", "update-confidence"]:
         cmd = subparsers.add_parser(name)
         cmd.add_argument("--db", type=Path, required=True)
-        if name in {"match-blocks", "match-pages"}:
+        if name in {"match-blocks", "match-pages", "build-concepts"}:
             cmd.add_argument("--min-score", type=float)
+        if name in {"match-blocks", "match-pages"}:
             cmd.add_argument("--top-k", type=int)
 
     export_review = subparsers.add_parser("export-review")
@@ -118,6 +120,22 @@ def main(argv: list[str] | None = None) -> int:
                     f"terms_seen={result.terms_seen}",
                     f"terms_created={result.terms_created}",
                     f"occurrences_created={result.occurrences_created}",
+                ]
+            )
+        )
+        return 0
+    if args.command == "build-concepts":
+        result = build_concepts(
+            db_path=args.db,
+            min_match_score=0.25 if args.min_score is None else args.min_score,
+        )
+        print(
+            " ".join(
+                [
+                    f"concepts_seen={result.concepts_seen}",
+                    f"concepts_created={result.concepts_created}",
+                    f"concept_terms_created={result.concept_terms_created}",
+                    f"evidence_created={result.evidence_created}",
                 ]
             )
         )

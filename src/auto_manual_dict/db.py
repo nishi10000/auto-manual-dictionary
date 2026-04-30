@@ -187,6 +187,8 @@ CREATE INDEX IF NOT EXISTS idx_term_occurrences_term ON term_occurrences(term_id
 CREATE INDEX IF NOT EXISTS idx_term_occurrences_block ON term_occurrences(block_id);
 CREATE INDEX IF NOT EXISTS idx_concepts_status_conf ON concepts(status, confidence);
 CREATE INDEX IF NOT EXISTS idx_evidence_concept ON evidence(concept_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_evidence_matched_block_terms
+  ON evidence(concept_id, ja_term_id, en_term_id, ja_block_id, en_block_id, evidence_type);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_block_match_pair ON block_match_candidates(ja_block_id, en_block_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_page_match_pair ON page_match_candidates(ja_document_id, en_document_id);
 """
