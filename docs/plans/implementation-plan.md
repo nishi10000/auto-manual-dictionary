@@ -211,6 +211,13 @@ Clamp score to 0..1.
 - noun phrase-like 1-4 word sequences
 - preserve `tightening torque`, `engine does not start`, `fuel pressure`
 
+**Behavior:**
+
+- Extract candidates from heading blocks and normal text blocks
+- Upsert unique terms into `terms`
+- Store per-block appearances in `term_occurrences`
+- Re-running extraction must not duplicate terms or occurrences
+
 ---
 
 ## Task 8: Implement concept candidate creation

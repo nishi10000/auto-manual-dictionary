@@ -6,6 +6,7 @@ from pathlib import Path
 from .block_matcher import match_blocks
 from .ingest import ingest_directory
 from .page_matcher import match_pages
+from .term_extract import extract_terms_to_db
 
 
 COMMANDS = [
@@ -108,6 +109,18 @@ def main(argv: list[str] | None = None) -> int:
             top_k_per_document=5 if args.top_k is None else args.top_k,
         )
         print(f"page_candidates_written={result.candidates_written}")
+        return 0
+    if args.command == "extract-terms":
+        result = extract_terms_to_db(db_path=args.db)
+        print(
+            " ".join(
+                [
+                    f"terms_seen={result.terms_seen}",
+                    f"terms_created={result.terms_created}",
+                    f"occurrences_created={result.occurrences_created}",
+                ]
+            )
+        )
         return 0
     parser.exit(status=2, message=f"Command '{args.command}' is not implemented yet. See docs/plans/implementation-plan.md.\n")
     return 2

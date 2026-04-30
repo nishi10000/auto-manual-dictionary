@@ -119,6 +119,25 @@ CREATE TABLE terms (
 );
 ```
 
+## term_occurrences
+
+用語がどのdocument/blockに現れたかを保持する。次工程のconcept candidate作成で、matched block上のja/en用語を結びつけるために使う。
+
+```sql
+CREATE TABLE term_occurrences (
+  id INTEGER PRIMARY KEY,
+  term_id INTEGER NOT NULL,
+  document_id INTEGER NOT NULL,
+  block_id INTEGER NOT NULL,
+  source TEXT NOT NULL DEFAULT 'block',
+  created_at TEXT NOT NULL,
+  FOREIGN KEY(term_id) REFERENCES terms(id),
+  FOREIGN KEY(document_id) REFERENCES documents(id),
+  FOREIGN KEY(block_id) REFERENCES document_blocks(id),
+  UNIQUE(term_id, block_id)
+);
+```
+
 ## concepts
 
 日英表現を束ねる概念。

@@ -98,6 +98,19 @@ CREATE TABLE IF NOT EXISTS terms (
   UNIQUE(lang, normalized_term)
 );
 
+CREATE TABLE IF NOT EXISTS term_occurrences (
+  id INTEGER PRIMARY KEY,
+  term_id INTEGER NOT NULL,
+  document_id INTEGER NOT NULL,
+  block_id INTEGER NOT NULL,
+  source TEXT NOT NULL DEFAULT 'block',
+  created_at TEXT NOT NULL,
+  FOREIGN KEY(term_id) REFERENCES terms(id) ON DELETE CASCADE,
+  FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
+  FOREIGN KEY(block_id) REFERENCES document_blocks(id) ON DELETE CASCADE,
+  UNIQUE(term_id, block_id)
+);
+
 CREATE TABLE IF NOT EXISTS concepts (
   id INTEGER PRIMARY KEY,
   concept_id TEXT NOT NULL UNIQUE,
@@ -170,6 +183,8 @@ CREATE TABLE IF NOT EXISTS review_actions (
 CREATE INDEX IF NOT EXISTS idx_documents_lang ON documents(lang);
 CREATE INDEX IF NOT EXISTS idx_anchors_value ON anchors(normalized_value);
 CREATE INDEX IF NOT EXISTS idx_terms_lang_norm ON terms(lang, normalized_term);
+CREATE INDEX IF NOT EXISTS idx_term_occurrences_term ON term_occurrences(term_id);
+CREATE INDEX IF NOT EXISTS idx_term_occurrences_block ON term_occurrences(block_id);
 CREATE INDEX IF NOT EXISTS idx_concepts_status_conf ON concepts(status, confidence);
 CREATE INDEX IF NOT EXISTS idx_evidence_concept ON evidence(concept_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_block_match_pair ON block_match_candidates(ja_block_id, en_block_id);
