@@ -295,8 +295,10 @@ Clamp score to 0..1.
 python -m auto_manual_dict ingest --lang ja --input tests/fixtures/ja --db /tmp/test.sqlite3
 python -m auto_manual_dict ingest --lang en --input tests/fixtures/en --db /tmp/test.sqlite3
 python -m auto_manual_dict match-pages --db /tmp/test.sqlite3
+python -m auto_manual_dict match-blocks --db /tmp/test.sqlite3
 python -m auto_manual_dict extract-terms --db /tmp/test.sqlite3
-python -m auto_manual_dict update-confidence --db /tmp/test.sqlite3
+python -m auto_manual_dict build-concepts --db /tmp/test.sqlite3
+python -m auto_manual_dict update-confidence --db /tmp/test.sqlite3 --review-ready-threshold 0.40
 python -m auto_manual_dict export-review --db /tmp/test.sqlite3 --out /tmp/review.csv
 ```
 

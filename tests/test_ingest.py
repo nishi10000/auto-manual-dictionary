@@ -10,17 +10,22 @@ def count(conn, table):
     return conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
 
 
+def html_count(lang: str) -> int:
+    return len(list((FIXTURES / lang).glob("*.html")))
+
+
 def test_ingest_directory_stores_documents_blocks_and_anchors_idempotently(tmp_path):
     db_path = tmp_path / "dict.sqlite3"
 
     first = ingest_directory(lang="ja", input_dir=FIXTURES / "ja", db_path=db_path)
     second = ingest_directory(lang="ja", input_dir=FIXTURES / "ja", db_path=db_path)
 
-    assert first.documents_seen == 5
-    assert second.documents_seen == 5
+    expected_docs = html_count("ja")
+    assert first.documents_seen == expected_docs
+    assert second.documents_seen == expected_docs
 
     with sqlite3.connect(db_path) as conn:
-        assert count(conn, "documents") == 5
+        assert count(conn, "documents") == expected_docs
         assert count(conn, "document_blocks") >= 15
         assert count(conn, "anchors") >= 8
         dtcs = {row[0] for row in conn.execute("SELECT normalized_value FROM anchors WHERE anchor_type='dtc'")}
@@ -54,7 +59,7 @@ def test_reingest_unchanged_files_keeps_block_ids_stable_and_does_not_update(tmp
             """
         ).fetchall()
 
-    assert first.documents_inserted == 5
+    assert first.documents_inserted == html_count("ja")
     assert second.documents_inserted == 0
     assert second.documents_updated == 0
     assert before == after
@@ -155,4 +160,4 @@ def test_ingest_both_languages_keeps_language_separate(tmp_path):
 
     with sqlite3.connect(db_path) as conn:
         langs = dict(conn.execute("SELECT lang, COUNT(*) FROM documents GROUP BY lang"))
-    assert langs == {"en": 5, "ja": 5}
+    assert langs == {"en": html_count("en"), "ja": html_count("ja")}

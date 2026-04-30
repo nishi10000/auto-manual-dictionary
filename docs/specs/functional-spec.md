@@ -13,7 +13,7 @@ python -m auto_manual_dict match-blocks --db ./work/dict.sqlite3
 python -m auto_manual_dict match-pages --db ./work/dict.sqlite3
 python -m auto_manual_dict extract-terms --db ./work/dict.sqlite3
 python -m auto_manual_dict build-concepts --db ./work/dict.sqlite3
-python -m auto_manual_dict update-confidence --db ./work/dict.sqlite3
+python -m auto_manual_dict update-confidence --db ./work/dict.sqlite3 --review-ready-threshold 0.85
 python -m auto_manual_dict export-review --db ./work/dict.sqlite3 --out ./review/review_ready.csv
 python -m auto_manual_dict approve --db ./work/dict.sqlite3 --concept-id SYMPTOM_ENGINE_NO_START --reviewer nishihara --reason "verified"
 python -m auto_manual_dict export-dictionary --db ./work/dict.sqlite3 --format jsonl --out ./dist/dictionary.jsonl
@@ -112,6 +112,7 @@ MVPでは `confidence_json` に説明可能な内訳を保存する。
 
 `confidence_version` は `confidence_mvp_0.1`。
 `confidence >= 0.85` の候補は `review_ready` にする。ただし `confirmed` はスコアだけでは絶対に設定しない。
+CLIでは fixture / QA 用に `--review-ready-threshold` で閾値を明示できる。未指定時の既定値は `0.85`。
 
 スコアを上げる要素:
 

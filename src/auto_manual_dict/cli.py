@@ -48,6 +48,8 @@ def build_parser() -> argparse.ArgumentParser:
         cmd.add_argument("--db", type=Path, required=True)
         if name in {"match-blocks", "match-pages", "build-concepts"}:
             cmd.add_argument("--min-score", type=float)
+        if name == "update-confidence":
+            cmd.add_argument("--review-ready-threshold", type=float)
         if name in {"match-blocks", "match-pages"}:
             cmd.add_argument("--top-k", type=int)
 
@@ -156,7 +158,10 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
     if args.command == "update-confidence":
-        result = update_confidence(db_path=args.db)
+        result = update_confidence(
+            db_path=args.db,
+            review_ready_threshold=0.85 if args.review_ready_threshold is None else args.review_ready_threshold,
+        )
         print(
             " ".join(
                 [
