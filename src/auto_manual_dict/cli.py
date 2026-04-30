@@ -62,6 +62,9 @@ def build_parser() -> argparse.ArgumentParser:
     import_review = subparsers.add_parser("import-review")
     import_review.add_argument("--db", type=Path, required=True)
     import_review.add_argument("--input", type=Path, required=True)
+    import_review.add_argument("--dry-run", action="store_true", help="Validate the review file without mutating the database")
+    import_review.add_argument("--report", type=Path, help="Write an import report CSV with per-row status")
+    import_review.add_argument("--write-back", type=Path, help="Write a copy of the input CSV with applied status columns")
 
     approve = subparsers.add_parser("approve")
     approve.add_argument("--db", type=Path, required=True)
@@ -177,8 +180,24 @@ def main(argv: list[str] | None = None) -> int:
         print(f"rows_exported={result.rows_exported} out={result.out_path}")
         return 0
     if args.command == "import-review":
-        result = import_review_actions(db_path=args.db, input_path=args.input)
-        print(f"rows_seen={result.rows_seen} actions_applied={result.actions_applied}")
+        result = import_review_actions(
+            db_path=args.db,
+            input_path=args.input,
+            dry_run=args.dry_run,
+            report_path=args.report,
+            write_back_path=args.write_back,
+        )
+        parts = [
+            f"rows_seen={result.rows_seen}",
+            f"actions_valid={result.actions_valid}",
+            f"actions_applied={result.actions_applied}",
+            f"actions_skipped={result.actions_skipped}",
+        ]
+        if result.report_path is not None:
+            parts.append(f"report={result.report_path}")
+        if result.write_back_path is not None:
+            parts.append(f"write_back={result.write_back_path}")
+        print(" ".join(parts))
         return 0
     if args.command in {"approve", "block", "defer"}:
         result = apply_review_action(

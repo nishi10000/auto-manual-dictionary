@@ -10,10 +10,18 @@
 python -m auto_manual_dict export-review --db ./work/dict.sqlite3 --out ./review/review_ready.csv
 ```
 
-人間レビュー担当者は `recommended_action` と evidence/context を見て、必要に応じて `review_note`, `action`, `reviewer`, `reason`, `reason_code` などを付けて `import-review` できます。
+人間レビュー担当者は `recommended_action` と evidence/context を見て、必要に応じて `action`, `reviewer`, `reason`, `reason_code`, `review_note` などを編集して `import-review` できます。`row_version` は古いCSV取り込み防止用なので編集しないでください。
+
+取り込み前の検証:
 
 ```bash
-python -m auto_manual_dict import-review --db ./work/dict.sqlite3 --input ./review/review_ready.csv
+python -m auto_manual_dict import-review --db ./work/dict.sqlite3 --input ./review/review_ready.csv --dry-run --report ./review/import_report.csv
+```
+
+取り込みと結果CSVの書き戻し:
+
+```bash
+python -m auto_manual_dict import-review --db ./work/dict.sqlite3 --input ./review/review_ready.csv --write-back ./review/review_imported.csv
 ```
 
 ## sample_dictionary.jsonl

@@ -87,7 +87,40 @@ CSV/JSONLでまとめて取り込む場合:
 python -m auto_manual_dict import-review --db "$DB" --input ./review/review_ready.csv
 ```
 
-`import-review` は `row_version` が現在値と違う行を stale CSV として拒否します。
+取り込み前に検証だけ行う場合:
+
+```bash
+python -m auto_manual_dict import-review \
+  --db "$DB" \
+  --input ./review/review_ready.csv \
+  --dry-run \
+  --report ./review/import_report.csv
+```
+
+取り込み結果をCSVに書き戻す場合:
+
+```bash
+python -m auto_manual_dict import-review \
+  --db "$DB" \
+  --input ./review/review_ready.csv \
+  --write-back ./review/review_imported.csv
+```
+
+`import-review` は取り込み前に全行を検証し、エラーがある場合は一部だけ反映することを避けます。`row_version` が現在値と違う行は stale CSV として拒否します。
+
+レビューCSVで人間が主に編集する列:
+
+- `action`: `approve` / `block` / `defer` / `inspect`
+  - `approve`: 確認済みとして `confirmed` にする
+  - `block`: 誤対応・危険・文脈違いとして `blocked` にする
+  - `defer`: 追加確認待ちとして `candidate` に戻す
+  - `inspect`: 何も反映せずスキップ
+- `reviewer`: レビュー担当者名。`approve` / `block` / `defer` では必須
+- `reason`: 判断理由。`approve` / `defer` では必須
+- `reason_code`: `block` の機械可読な理由コード。例: `wrong_context`, `unsafe_mismatch`, `duplicate`
+- `review_note`: レビュー中のメモ。`reason` が空の場合は理由として利用できます
+- `row_version`: 編集しないでください。古いCSVによる上書きを防ぐための値です
+- `recommended_action`: システム推奨です。必要に応じて `action` にコピーして使います
 
 ## 辞書出力
 
@@ -115,6 +148,10 @@ python -m auto_manual_dict export-rag-safe --db "$DB" --out ./dist/rag_safe.json
 - `export-query-expansion` は `confirmed` かつ `safe_for_query_expansion = 1` のみ出力します。
 - `export-rag-safe` は `confirmed` かつ `safe_for_answer_generation = 1` のみ出力します。
 
+## 機密データの扱い
+
+SQLite DB と review CSV / import report / write-back CSV には、マニュアル由来の本文断片、ファイルパス、証拠contextが含まれることがあります。社外共有や公開リポジトリへのコミットは避け、必要な場合は `dist/` の confirmed 辞書だけを用途に応じて共有してください。
+
 ## 主なコマンド
 
 - `ingest`: HTMLを読み、documents / blocks / anchors をSQLiteに保存
@@ -125,7 +162,7 @@ python -m auto_manual_dict export-rag-safe --db "$DB" --out ./dist/rag_safe.json
 - `update-confidence`: evidenceからconfidenceとreview_ready状態を更新
 - `export-review`: review_ready候補をCSV/JSONL出力
 - `approve` / `block` / `defer`: 人間レビュー結果を反映
-- `import-review`: CSV/JSONLのレビュー結果を取り込み
+- `import-review`: CSV/JSONLのレビュー結果を取り込み。`--dry-run`, `--report`, `--write-back` 対応
 - `export-dictionary`: confirmed-only辞書を出力
 
 ## examples

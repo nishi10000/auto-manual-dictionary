@@ -29,6 +29,26 @@ def test_parser_has_review_commands():
     assert args.command == "export-review"
 
 
+def test_parser_has_import_review_operational_safety_options():
+    parser = build_parser()
+    args = parser.parse_args([
+        "import-review",
+        "--db",
+        "work/dict.sqlite3",
+        "--input",
+        "review/review_ready.csv",
+        "--dry-run",
+        "--report",
+        "review/import_report.csv",
+        "--write-back",
+        "review/review_imported.csv",
+    ])
+    assert args.command == "import-review"
+    assert args.dry_run is True
+    assert str(args.report) == "review/import_report.csv"
+    assert str(args.write_back) == "review/review_imported.csv"
+
+
 def test_parser_has_safe_export_commands():
     parser = build_parser()
     args = parser.parse_args([

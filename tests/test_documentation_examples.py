@@ -42,7 +42,8 @@ def test_examples_include_valid_sample_review_csv_and_dictionary_jsonl():
     expected_review_columns = {
         "concept_id", "category", "confidence", "confidence_json", "status",
         "ja_terms", "en_terms", "evidence_count", "evidence_ids", "evidence_summary",
-        "sample_ja_context", "sample_en_context", "recommended_action", "row_version", "export_batch_id",
+        "sample_ja_context", "sample_en_context", "recommended_action", "action", "reviewer",
+        "reason", "reason_code", "row_version", "export_batch_id",
     }
     assert expected_review_columns <= set(review_row)
     assert review_row["status"] == "review_ready"
