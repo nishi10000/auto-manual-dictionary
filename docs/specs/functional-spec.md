@@ -15,7 +15,7 @@ python -m auto_manual_dict extract-terms --db ./work/dict.sqlite3
 python -m auto_manual_dict build-concepts --db ./work/dict.sqlite3
 python -m auto_manual_dict update-confidence --db ./work/dict.sqlite3
 python -m auto_manual_dict export-review --db ./work/dict.sqlite3 --out ./review/review_ready.csv
-python -m auto_manual_dict approve --db ./work/dict.sqlite3 --concept-id SYMPTOM_ENGINE_NO_START
+python -m auto_manual_dict approve --db ./work/dict.sqlite3 --concept-id SYMPTOM_ENGINE_NO_START --reviewer nishihara --reason "verified"
 python -m auto_manual_dict export-dictionary --db ./work/dict.sqlite3 --format jsonl --out ./dist/dictionary.jsonl
 ```
 
@@ -129,26 +129,44 @@ MVPでは `confidence_json` に説明可能な内訳を保存する。
 
 ## 機能6: export-review
 
-`review_ready` 候補をCSV/JSONLで出す。
+`review_ready` 候補をCSV/JSONLで出す。既定では `status = review_ready` のみを出力し、レビュー対象のスナップショットとして `row_version` と `export_batch_id` を含める。
 
 列:
 
 - concept_id
+- category
+- confidence
+- confidence_json
+- status
 - ja_terms
 - en_terms
-- confidence
 - evidence_count
+- evidence_ids
+- evidence_types
 - evidence_summary
 - sample_ja_context
 - sample_en_context
+- anchors
+- source_files
 - recommended_action
+- review_note
+- row_version
+- export_batch_id
 
-## 機能7: approve/block
+## 機能7: approve/block/defer/import-review/export-dictionary
 
 人間レビュー結果を反映する。
 
-- approve: concept/termをconfirmedにする
-- block: 危険訳/誤訳をblockedにする
-- defer: candidateに戻す
-- split: conceptを分割する
-- merge: conceptを統合する
+- approve: reviewer と reason 必須。concept を `confirmed` にする
+- block: reviewer と reason_code 必須。危険訳/誤訳を `blocked` にする
+- defer: reviewer と reason 必須。追加証拠待ちとして `candidate` に戻す
+- import-review: CSV/JSONL の action を取り込み、`row_version` が現在値と違う場合は stale CSV として拒否する
+- split / merge: 将来拡張
+
+レビュー操作は必ず `review_actions` に履歴を保存する。
+
+confirmed-only dictionary export:
+
+- `export-dictionary` は `status = confirmed` の concept のみ出す
+- `export-query-expansion` は confirmed かつ `safe_for_query_expansion = 1` のみ出す
+- `export-rag-safe` は confirmed かつ `safe_for_answer_generation = 1` のみ出す

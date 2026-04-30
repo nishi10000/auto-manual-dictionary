@@ -40,10 +40,12 @@ python -m auto_manual_dict export-review --db work.sqlite3 --format jsonl --out 
 ## レビュー操作
 
 ```bash
-python -m auto_manual_dict approve --db work.sqlite3 --concept-id SYMPTOM_ENGINE_NO_START --reviewer nishihara
-python -m auto_manual_dict block --db work.sqlite3 --concept-id BAD_TRANSLATION --reason "文脈違い"
-python -m auto_manual_dict defer --db work.sqlite3 --concept-id AMBIGUOUS_TERM --reason "追加証拠待ち"
+python -m auto_manual_dict approve --db work.sqlite3 --concept-id SYMPTOM_ENGINE_NO_START --reviewer nishihara --reason "文脈と証拠を確認済み"
+python -m auto_manual_dict block --db work.sqlite3 --concept-id BAD_TRANSLATION --reviewer nishihara --reason-code wrong_context --reason "文脈違い"
+python -m auto_manual_dict defer --db work.sqlite3 --concept-id AMBIGUOUS_TERM --reviewer nishihara --reason "追加証拠待ち"
 ```
+
+`approve` / `block` / `defer` は `review_actions` に履歴を残す。CSV/JSONLから `import-review` する場合は `row_version` が現在値と一致しない行を stale として拒否する。
 
 ## 優先順位
 

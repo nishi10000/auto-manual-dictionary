@@ -6,8 +6,10 @@ from pathlib import Path
 from .block_matcher import match_blocks
 from .concepts import build_concepts
 from .confidence import update_confidence
+from .export import export_answer_generation, export_dictionary, export_query_expansion, export_review_queue
 from .ingest import ingest_directory
 from .page_matcher import match_pages
+from .review import apply_review_action, import_review_actions
 from .term_extract import extract_terms_to_db
 
 
@@ -22,6 +24,7 @@ COMMANDS = [
     "import-review",
     "approve",
     "block",
+    "defer",
     "export-dictionary",
     "export-query-expansion",
     "export-rag-safe",
@@ -51,6 +54,8 @@ def build_parser() -> argparse.ArgumentParser:
     export_review = subparsers.add_parser("export-review")
     export_review.add_argument("--db", type=Path, required=True)
     export_review.add_argument("--out", type=Path, required=True)
+    export_review.add_argument("--format", choices=["csv", "jsonl"], default="csv")
+    export_review.add_argument("--status", default="review_ready")
 
     import_review = subparsers.add_parser("import-review")
     import_review.add_argument("--db", type=Path, required=True)
@@ -61,6 +66,7 @@ def build_parser() -> argparse.ArgumentParser:
     approve.add_argument("--concept-id", required=True)
     approve.add_argument("--reviewer", required=True)
     approve.add_argument("--reason", required=True)
+    approve.add_argument("--row-version", type=int)
 
     block = subparsers.add_parser("block")
     block.add_argument("--db", type=Path, required=True)
@@ -68,6 +74,14 @@ def build_parser() -> argparse.ArgumentParser:
     block.add_argument("--reviewer", required=True)
     block.add_argument("--reason-code", required=True)
     block.add_argument("--reason")
+    block.add_argument("--row-version", type=int)
+
+    defer = subparsers.add_parser("defer")
+    defer.add_argument("--db", type=Path, required=True)
+    defer.add_argument("--concept-id", required=True)
+    defer.add_argument("--reviewer", required=True)
+    defer.add_argument("--reason", required=True)
+    defer.add_argument("--row-version", type=int)
 
     for name in ["export-dictionary", "export-query-expansion", "export-rag-safe"]:
         cmd = subparsers.add_parser(name)
@@ -152,6 +166,48 @@ def main(argv: list[str] | None = None) -> int:
                 ]
             )
         )
+        return 0
+    if args.command == "export-review":
+        result = export_review_queue(db_path=args.db, out_path=args.out, fmt=args.format, status=args.status)
+        print(f"rows_exported={result.rows_exported} out={result.out_path}")
+        return 0
+    if args.command == "import-review":
+        result = import_review_actions(db_path=args.db, input_path=args.input)
+        print(f"rows_seen={result.rows_seen} actions_applied={result.actions_applied}")
+        return 0
+    if args.command in {"approve", "block", "defer"}:
+        result = apply_review_action(
+            db_path=args.db,
+            concept_id=args.concept_id,
+            action=args.command,
+            reviewer=args.reviewer,
+            reason=getattr(args, "reason", None),
+            reason_code=getattr(args, "reason_code", None),
+            row_version=getattr(args, "row_version", None),
+        )
+        print(
+            " ".join(
+                [
+                    f"concept_id={result.concept_id}",
+                    f"action={result.action}",
+                    f"previous_status={result.previous_status}",
+                    f"new_status={result.new_status}",
+                    f"row_version={result.row_version}",
+                ]
+            )
+        )
+        return 0
+    if args.command == "export-dictionary":
+        result = export_dictionary(db_path=args.db, out_path=args.out, fmt=args.format)
+        print(f"rows_exported={result.rows_exported} out={result.out_path}")
+        return 0
+    if args.command == "export-query-expansion":
+        result = export_query_expansion(db_path=args.db, out_path=args.out)
+        print(f"rows_exported={result.rows_exported} out={result.out_path}")
+        return 0
+    if args.command == "export-rag-safe":
+        result = export_answer_generation(db_path=args.db, out_path=args.out)
+        print(f"rows_exported={result.rows_exported} out={result.out_path}")
         return 0
     parser.exit(status=2, message=f"Command '{args.command}' is not implemented yet. See docs/plans/implementation-plan.md.\n")
     return 2
