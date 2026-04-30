@@ -69,8 +69,9 @@ CREATE TABLE IF NOT EXISTS block_match_candidates (
   evidence_json TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'candidate',
   created_at TEXT NOT NULL,
-  FOREIGN KEY(ja_block_id) REFERENCES document_blocks(id),
-  FOREIGN KEY(en_block_id) REFERENCES document_blocks(id)
+  FOREIGN KEY(ja_block_id) REFERENCES document_blocks(id) ON DELETE CASCADE,
+  FOREIGN KEY(en_block_id) REFERENCES document_blocks(id) ON DELETE CASCADE,
+  UNIQUE(ja_block_id, en_block_id)
 );
 
 CREATE TABLE IF NOT EXISTS page_match_candidates (
@@ -81,8 +82,9 @@ CREATE TABLE IF NOT EXISTS page_match_candidates (
   match_type TEXT NOT NULL,
   evidence_json TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'candidate',
-  FOREIGN KEY(ja_document_id) REFERENCES documents(id),
-  FOREIGN KEY(en_document_id) REFERENCES documents(id)
+  FOREIGN KEY(ja_document_id) REFERENCES documents(id) ON DELETE CASCADE,
+  FOREIGN KEY(en_document_id) REFERENCES documents(id) ON DELETE CASCADE,
+  UNIQUE(ja_document_id, en_document_id)
 );
 
 CREATE TABLE IF NOT EXISTS terms (
@@ -170,6 +172,8 @@ CREATE INDEX IF NOT EXISTS idx_anchors_value ON anchors(normalized_value);
 CREATE INDEX IF NOT EXISTS idx_terms_lang_norm ON terms(lang, normalized_term);
 CREATE INDEX IF NOT EXISTS idx_concepts_status_conf ON concepts(status, confidence);
 CREATE INDEX IF NOT EXISTS idx_evidence_concept ON evidence(concept_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_block_match_pair ON block_match_candidates(ja_block_id, en_block_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_page_match_pair ON page_match_candidates(ja_document_id, en_document_id);
 """
 
 

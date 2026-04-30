@@ -33,6 +33,24 @@ def _html_files(input_dir: Path) -> list[Path]:
     return sorted(p for p in input_dir.rglob("*") if p.is_file() and p.suffix.lower() in {".html", ".htm"})
 
 
+def _delete_derived_matches_for_document(conn, document_id: int) -> None:
+    # Existing match candidates may point at block IDs that are about to be
+    # replaced. Delete them before replacing blocks so content updates do not
+    # violate foreign keys or leave stale evidence candidates.
+    conn.execute(
+        """
+        DELETE FROM block_match_candidates
+        WHERE ja_block_id IN (SELECT id FROM document_blocks WHERE document_id = ?)
+           OR en_block_id IN (SELECT id FROM document_blocks WHERE document_id = ?)
+        """,
+        (document_id, document_id),
+    )
+    conn.execute(
+        "DELETE FROM page_match_candidates WHERE ja_document_id = ? OR en_document_id = ?",
+        (document_id, document_id),
+    )
+
+
 def _upsert_document(
     conn,
     *,
@@ -89,6 +107,7 @@ def _upsert_document(
     )
     # Replace dependent extracted data only when content changed. This keeps block
     # ids stable for unchanged re-ingest runs and protects future evidence links.
+    _delete_derived_matches_for_document(conn, int(existing["id"]))
     conn.execute("DELETE FROM anchors WHERE document_id = ?", (existing["id"],))
     conn.execute("DELETE FROM document_blocks WHERE document_id = ?", (existing["id"],))
     return int(existing["id"]), "updated"

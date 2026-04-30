@@ -3,7 +3,9 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from .block_matcher import match_blocks
 from .ingest import ingest_directory
+from .page_matcher import match_pages
 
 
 COMMANDS = [
@@ -38,6 +40,9 @@ def build_parser() -> argparse.ArgumentParser:
     for name in ["match-blocks", "match-pages", "extract-terms", "build-concepts", "update-confidence"]:
         cmd = subparsers.add_parser(name)
         cmd.add_argument("--db", type=Path, required=True)
+        if name in {"match-blocks", "match-pages"}:
+            cmd.add_argument("--min-score", type=float)
+            cmd.add_argument("--top-k", type=int)
 
     export_review = subparsers.add_parser("export-review")
     export_review.add_argument("--db", type=Path, required=True)
@@ -88,5 +93,21 @@ def main(argv: list[str] | None = None) -> int:
             )
         )
         return 0 if result.errors == 0 else 1
+    if args.command == "match-blocks":
+        result = match_blocks(
+            db_path=args.db,
+            min_score=0.20 if args.min_score is None else args.min_score,
+            top_k_per_block=5 if args.top_k is None else args.top_k,
+        )
+        print(f"block_candidates_written={result.candidates_written}")
+        return 0
+    if args.command == "match-pages":
+        result = match_pages(
+            db_path=args.db,
+            min_score=0.25 if args.min_score is None else args.min_score,
+            top_k_per_document=5 if args.top_k is None else args.top_k,
+        )
+        print(f"page_candidates_written={result.candidates_written}")
+        return 0
     parser.exit(status=2, message=f"Command '{args.command}' is not implemented yet. See docs/plans/implementation-plan.md.\n")
     return 2

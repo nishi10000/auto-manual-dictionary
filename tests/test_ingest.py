@@ -104,6 +104,50 @@ def test_reingest_backfills_legacy_missing_source_html_without_changing_block_id
     assert "DTC P0A80" in source_html
 
 
+def test_reingest_changed_document_removes_stale_match_candidates_before_replacing_blocks(tmp_path):
+    import shutil
+
+    fixture_copy = tmp_path / "fixtures"
+    shutil.copytree(FIXTURES, fixture_copy)
+    db_path = tmp_path / "dict.sqlite3"
+    ingest_directory(lang="ja", input_dir=fixture_copy / "ja", db_path=db_path)
+    ingest_directory(lang="en", input_dir=fixture_copy / "en", db_path=db_path)
+
+    from auto_manual_dict.block_matcher import match_blocks
+    from auto_manual_dict.page_matcher import match_pages
+
+    match_blocks(db_path=db_path, min_score=0.20)
+    match_pages(db_path=db_path, min_score=0.25)
+    changed = fixture_copy / "ja" / "engine_no_start.html"
+    changed.write_text(changed.read_text(encoding="utf-8").replace("P0A80", "P0A81"), encoding="utf-8")
+
+    result = ingest_directory(lang="ja", input_dir=fixture_copy / "ja", db_path=db_path)
+
+    with sqlite3.connect(db_path) as conn:
+        dangling_block_matches = conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM block_match_candidates bmc
+            LEFT JOIN document_blocks jb ON jb.id = bmc.ja_block_id
+            LEFT JOIN document_blocks eb ON eb.id = bmc.en_block_id
+            WHERE jb.id IS NULL OR eb.id IS NULL
+            """
+        ).fetchone()[0]
+        stale_page_matches = conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM page_match_candidates pmc
+            JOIN documents dja ON dja.id = pmc.ja_document_id
+            WHERE dja.path = 'engine_no_start.html'
+            """
+        ).fetchone()[0]
+
+    assert result.errors == 0
+    assert result.documents_updated == 1
+    assert dangling_block_matches == 0
+    assert stale_page_matches == 0
+
+
 def test_ingest_both_languages_keeps_language_separate(tmp_path):
     db_path = tmp_path / "dict.sqlite3"
     ingest_directory(lang="ja", input_dir=FIXTURES / "ja", db_path=db_path)
