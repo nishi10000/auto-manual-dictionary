@@ -1,0 +1,114 @@
+import sqlite3
+from pathlib import Path
+
+from auto_manual_dict.ingest import ingest_directory
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def count(conn, table):
+    return conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+
+
+def test_ingest_directory_stores_documents_blocks_and_anchors_idempotently(tmp_path):
+    db_path = tmp_path / "dict.sqlite3"
+
+    first = ingest_directory(lang="ja", input_dir=FIXTURES / "ja", db_path=db_path)
+    second = ingest_directory(lang="ja", input_dir=FIXTURES / "ja", db_path=db_path)
+
+    assert first.documents_seen == 5
+    assert second.documents_seen == 5
+
+    with sqlite3.connect(db_path) as conn:
+        assert count(conn, "documents") == 5
+        assert count(conn, "document_blocks") >= 15
+        assert count(conn, "anchors") >= 8
+        dtcs = {row[0] for row in conn.execute("SELECT normalized_value FROM anchors WHERE anchor_type='dtc'")}
+        assert {"P0A80", "B1801"}.issubset(dtcs)
+        safety_blocks = {row[0] for row in conn.execute("SELECT DISTINCT block_type FROM document_blocks WHERE block_type IN ('warning','caution','note','prohibition')")}
+        assert {"warning", "caution", "note", "prohibition"}.issubset(safety_blocks)
+
+
+def test_reingest_unchanged_files_keeps_block_ids_stable_and_does_not_update(tmp_path):
+    db_path = tmp_path / "dict.sqlite3"
+
+    first = ingest_directory(lang="ja", input_dir=FIXTURES / "ja", db_path=db_path)
+    with sqlite3.connect(db_path) as conn:
+        before = conn.execute(
+            """
+            SELECT documents.path, document_blocks.block_index, document_blocks.id
+            FROM document_blocks
+            JOIN documents ON documents.id = document_blocks.document_id
+            ORDER BY documents.path, document_blocks.block_index
+            """
+        ).fetchall()
+
+    second = ingest_directory(lang="ja", input_dir=FIXTURES / "ja", db_path=db_path)
+    with sqlite3.connect(db_path) as conn:
+        after = conn.execute(
+            """
+            SELECT documents.path, document_blocks.block_index, document_blocks.id
+            FROM document_blocks
+            JOIN documents ON documents.id = document_blocks.document_id
+            ORDER BY documents.path, document_blocks.block_index
+            """
+        ).fetchall()
+
+    assert first.documents_inserted == 5
+    assert second.documents_inserted == 0
+    assert second.documents_updated == 0
+    assert before == after
+
+
+def test_ingest_stores_raw_html_locally_for_reproducibility(tmp_path):
+    db_path = tmp_path / "dict.sqlite3"
+
+    ingest_directory(lang="ja", input_dir=FIXTURES / "ja", db_path=db_path)
+
+    with sqlite3.connect(db_path) as conn:
+        source_html = conn.execute(
+            "SELECT source_html FROM documents WHERE path = ?",
+            ("engine_no_start.html",),
+        ).fetchone()[0]
+
+    assert "<title>エンジン始動不良</title>" in source_html
+    assert "DTC P0A80" in source_html
+
+
+def test_reingest_backfills_legacy_missing_source_html_without_changing_block_ids(tmp_path):
+    db_path = tmp_path / "dict.sqlite3"
+    ingest_directory(lang="ja", input_dir=FIXTURES / "ja", db_path=db_path)
+
+    with sqlite3.connect(db_path) as conn:
+        before = conn.execute(
+            "SELECT id FROM document_blocks ORDER BY document_id, block_index"
+        ).fetchall()
+        conn.execute("UPDATE documents SET source_html = NULL WHERE path = ?", ("engine_no_start.html",))
+        conn.commit()
+
+    result = ingest_directory(lang="ja", input_dir=FIXTURES / "ja", db_path=db_path)
+
+    with sqlite3.connect(db_path) as conn:
+        after = conn.execute(
+            "SELECT id FROM document_blocks ORDER BY document_id, block_index"
+        ).fetchall()
+        source_html = conn.execute(
+            "SELECT source_html FROM documents WHERE path = ?",
+            ("engine_no_start.html",),
+        ).fetchone()[0]
+
+    assert result.documents_updated == 1
+    assert result.errors == 0
+    assert before == after
+    assert source_html is not None
+    assert "DTC P0A80" in source_html
+
+
+def test_ingest_both_languages_keeps_language_separate(tmp_path):
+    db_path = tmp_path / "dict.sqlite3"
+    ingest_directory(lang="ja", input_dir=FIXTURES / "ja", db_path=db_path)
+    ingest_directory(lang="en", input_dir=FIXTURES / "en", db_path=db_path)
+
+    with sqlite3.connect(db_path) as conn:
+        langs = dict(conn.execute("SELECT lang, COUNT(*) FROM documents GROUP BY lang"))
+    assert langs == {"en": 5, "ja": 5}

@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from .ingest import ingest_directory
+
 
 COMMANDS = [
     "ingest",
@@ -71,5 +73,20 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.command == "ingest":
+        result = ingest_directory(lang=args.lang, input_dir=args.input, db_path=args.db)
+        print(
+            " ".join(
+                [
+                    f"documents_seen={result.documents_seen}",
+                    f"documents_inserted={result.documents_inserted}",
+                    f"documents_updated={result.documents_updated}",
+                    f"blocks_written={result.blocks_written}",
+                    f"anchors_written={result.anchors_written}",
+                    f"errors={result.errors}",
+                ]
+            )
+        )
+        return 0 if result.errors == 0 else 1
     parser.exit(status=2, message=f"Command '{args.command}' is not implemented yet. See docs/plans/implementation-plan.md.\n")
     return 2
